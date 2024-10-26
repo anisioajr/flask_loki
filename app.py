@@ -57,10 +57,10 @@ def metrics():
 @app.route('/')
 def home():
     log_message('info', 'This is an INFO message')
-    log_message('debug', 'This is a DEBUG message')
-    log_message('warning', 'This is a WARNING message')
-    log_message('error', 'This is an ERROR message')
-    log_message('critical', 'This is a CRITICAL message')
+    #og_message('debug', 'This is a DEBUG message')
+    #log_message('warning', 'This is a WARNING message')
+    #log_message('error', 'This is an ERROR message')
+    #log_message('critical', 'This is a CRITICAL message')
     return "API de pessoas"
 
 @app.route('/pessoas', methods=['GET'])
@@ -71,8 +71,10 @@ def pessoas():
             cursor = conn.cursor()
             cursor.execute('''SELECT nome, sobrenome, cpf, data_nascimento FROM pessoa''')
             result = cursor.fetchall()
+            log_message('info', '/pessoas BD')
             return json.dumps([dict(ix) for ix in result]), 200
     except Exception as e:
+        log_message('error', 'Erro na requisição BD')
         return jsonify(error=str(e)), 500
 
 @app.route('/pessoa/<cpf>', methods=['GET', 'DELETE'])
@@ -86,12 +88,15 @@ def pessoa_por_cpf(cpf):
                 result = cursor.fetchall()
                 if result:
                     return json.dumps([dict(ix) for ix in result]), 200
+                log_message('warning', 'pessoa ; BD +100')
                 return jsonify(error="Pessoa não encontrada"), 404
             elif request.method == 'DELETE':
                 cursor.execute('DELETE FROM pessoa WHERE cpf = ?', (cpf,))
                 if cursor.rowcount == 0:
+                    log_message('warning', 'CPF ; BD +100')
                     return jsonify(error="Pessoa não encontrada"), 404
                 conn.commit()
+                log_message('info', 'pessoa ; BD +000 delete')
                 return jsonify(success="Pessoa deletada com sucesso"), 200
     except Exception as e:
         return jsonify(error=str(e)), 500
@@ -112,9 +117,11 @@ def insere_atualiza_pessoa():
             if exists:
                 cursor.execute('UPDATE pessoa SET nome=?, sobrenome=?, data_nascimento=? WHERE cpf=?', (nome, sobrenome, datanascimento, cpf))
                 conn.commit()
+                log_message('info', 'pessoas ; BD +000 update')
                 return jsonify(success="Pessoa atualizada com sucesso"), 200
             cursor.execute('INSERT INTO pessoa (nome, sobrenome, cpf, data_nascimento) VALUES (?, ?, ?, ?)', (nome, sobrenome, cpf, datanascimento))
             conn.commit()
+            log_message('info', 'pessoas ; BD +000 insert')
             return jsonify(success="Pessoa inserida com sucesso"), 201
     except Exception as e:
         return jsonify(error=str(e)), 500
